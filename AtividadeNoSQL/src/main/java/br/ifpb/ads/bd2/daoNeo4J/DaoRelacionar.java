@@ -16,9 +16,10 @@ public class DaoRelacionar<O> {
 
 	public void criarRelacionamento(O object1, O object2, String nomeRelacao) {
 		try (Transaction transacao = session.beginTransaction();){
-			transacao.run("MATCH (n:" + object1 + ") MATCH (n2:" + object2 + ")"
-					+ " CREATE (n)-[:" + nomeRelacao + "]->(n2)");
+			transacao.run("MATCH (n:" + object1.getClass().getSimpleName() + ") MATCH (p:" + object2.getClass().getSimpleName() + ")"
+					+ " CREATE (n)-[:" + nomeRelacao + "]->(p)");
 			transacao.success();
+			System.out.println("relacionamento criado");
 		}
 		session.close();
 	}
