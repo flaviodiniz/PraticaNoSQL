@@ -14,65 +14,41 @@ import br.ifpb.ads.bd2.modelos.Curso;
 import br.ifpb.ads.bd2.persistenciaNeo4J.Neo4jConnection;
 
 public class CursoDaoNeo implements DaoNeo4j<Curso> {
+	private Session session = null;
 
-	Neo4jConnection connection;
+	public CursoDaoNeo() {
+		@SuppressWarnings("resource")
+		Neo4jConnection connection = new Neo4jConnection();
+		this.session = connection.getSession();
+	}
 
 	@SuppressWarnings("static-access")
 	public void salvar(Curso curso) {
-		try (Session session = (Session) connection.getInstance()) {
-			try (Transaction tx = session.beginTransaction()) {
-				tx.run("CREATE (a:Curso {nomeCurso: '" + curso.getNome() + "', codCurso: '" + curso.getCod_curso()
-						+ "'})");
-				tx.success();
-			}
-		} finally {
-			try {
-				connection.close();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		try (Transaction tx = session.beginTransaction()) {
+			tx.run("CREATE (a:Curso {nomeCurso: '" + curso.getNome() + "', codCurso: " + curso.getCod_curso() + "})");
+			tx.success();
+			session.close();
 		}
 	}
 
 	public void atualizar(Curso oldCurso, Curso cursoNovo) {
-		try (@SuppressWarnings("static-access")
-		Session session = (Session) connection.getInstance()) {
-			try (Transaction tx = session.beginTransaction()) {
-				tx.run("MATCH (a:Curso {nomePessoa: '" + oldCurso.getNome() + "'}) SET a.nomeCurso = '"
-						+ cursoNovo.getNome() + "'");
-				tx.success();
-			}
-		} finally {
-			try {
-				connection.close();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		try (Transaction tx = session.beginTransaction()) {
+			tx.run("MATCH (a:Curso {nomePessoa: '" + oldCurso.getNome() + "'}) SET a.nomeCurso = '"
+					+ cursoNovo.getNome() + "'");
+			tx.success();
+			session.close();
 		}
 	}
 
 	public void deletar(Curso curso) {
-		try (@SuppressWarnings("static-access")
-		Session session = (Session) connection.getInstance()) {
-			try (Transaction tx = session.beginTransaction()) {
-				tx.run("MATCH (a:Curso {nomeCurso: '" + curso.getNome() + "'}) DETACH DELETE a");
-				tx.success();
-			}
-		} finally {
-			try {
-				connection.close();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		try (Transaction tx = session.beginTransaction()) {
+			tx.run("MATCH (a:Curso {nomeCurso: '" + curso.getNome() + "'}) DETACH DELETE a");
+			tx.success();
+			session.close();
 		}
 	}
 
 	public DBObject findOne(Curso curso) {
-		@SuppressWarnings("static-access")
-		Session session = (Session) connection.getInstance();
 		StatementResult resultado = session
 				.run("MATCH (n:Curso) WHERE n.nomeCurso = '" + curso.getNome() + "'RETURN n");
 		while (resultado.hasNext()) {
@@ -87,8 +63,6 @@ public class CursoDaoNeo implements DaoNeo4j<Curso> {
 
 	public List<Curso> buscarTodos() {
 		ArrayList<Curso> allCurso = new ArrayList<Curso>();
-		@SuppressWarnings("static-access")
-		Session session = (Session) connection.getInstance();
 		StatementResult resultado = session.run("MATCH (n:Curso) RETURN n");
 		while (resultado.hasNext()) {
 			Record nodeAtual = resultado.next();

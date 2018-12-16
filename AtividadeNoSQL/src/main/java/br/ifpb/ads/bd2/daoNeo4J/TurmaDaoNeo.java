@@ -15,64 +15,41 @@ import br.ifpb.ads.bd2.persistenciaNeo4J.Neo4jConnection;
 
 public class TurmaDaoNeo implements DaoNeo4j<Turma> {
 
-	Neo4jConnection connection;
+	private Session session = null;
 
-	@SuppressWarnings("static-access")
+	public TurmaDaoNeo() {
+		@SuppressWarnings("resource")
+		Neo4jConnection connection = new Neo4jConnection();
+		this.session = connection.getSession();
+	}
+
 	public void salvar(Turma turma) {
-		try (Session session = (Session) connection.getInstance()) {
-			try (Transaction tx = session.beginTransaction()) {
-				tx.run("CREATE (a:Turma {nomeTurma: '" + turma.getNome() + "', codTurma: '" + turma.getCodigo_turma()
-						+ "'})");
-				tx.success();
-			}
-		} finally {
-			try {
-				connection.close();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		try (Transaction tx = session.beginTransaction()) {
+			tx.run("CREATE (a:Turma {nomeTurma: '" + turma.getNome() + "', codTurma: " + turma.getCodigo_turma()
+					+ "})");
+			tx.success();
+			session.close();
 		}
 	}
 
 	public void atualizar(Turma oldTurma, Turma turmaNova) {
-		try (@SuppressWarnings("static-access")
-		Session session = (Session) connection.getInstance()) {
-			try (Transaction tx = session.beginTransaction()) {
-				tx.run("MATCH (a:Turma {nomeTurma: '" + oldTurma.getNome() + "'}) SET a.nomeTurma = '"
-						+ turmaNova.getNome() + "'");
-				tx.success();
-			}
-		} finally {
-			try {
-				connection.close();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		try (Transaction tx = session.beginTransaction()) {
+			tx.run("MATCH (a:Turma {nomeTurma: '" + oldTurma.getNome() + "'}) SET a.nomeTurma = '" + turmaNova.getNome()
+					+ "'");
+			tx.success();
+			session.close();
 		}
 	}
 
 	public void deletar(Turma turma) {
-		try (@SuppressWarnings("static-access")
-		Session session = (Session) connection.getInstance()) {
-			try (Transaction tx = session.beginTransaction()) {
-				tx.run("MATCH (a:Turma {nomeTurma: '" + turma.getNome() + "'}) DETACH DELETE a");
-				tx.success();
-			}
-		} finally {
-			try {
-				connection.close();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		try (Transaction tx = session.beginTransaction()) {
+			tx.run("MATCH (a:Turma {nomeTurma: '" + turma.getNome() + "'}) DETACH DELETE a");
+			tx.success();
+			session.close();
 		}
 	}
 
 	public DBObject findOne(Turma turma) {
-		@SuppressWarnings("static-access")
-		Session session = (Session) connection.getInstance();
 		StatementResult resultado = session
 				.run("MATCH (n:Turma) WHERE n.nomeTurma = '" + turma.getNome() + "'RETURN n");
 		while (resultado.hasNext()) {
@@ -87,8 +64,6 @@ public class TurmaDaoNeo implements DaoNeo4j<Turma> {
 
 	public List<Turma> buscarTodos() {
 		ArrayList<Turma> allTurma = new ArrayList<Turma>();
-		@SuppressWarnings("static-access")
-		Session session = (Session) connection.getInstance();
 		StatementResult resultado = session.run("MATCH (n:Turma) RETURN n");
 		while (resultado.hasNext()) {
 			Record nodeAtual = resultado.next();

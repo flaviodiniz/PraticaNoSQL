@@ -13,84 +13,46 @@ import com.mongodb.DBObject;
 import br.ifpb.ads.bd2.modelos.Aluno;
 import br.ifpb.ads.bd2.persistenciaNeo4J.Neo4jConnection;
 
-public class AlunoDaoNeo implements DaoNeo4j<Aluno>{
-	
-	Neo4jConnection connection;
-	private PessoaDaoNeo pessoa;
+public class AlunoDaoNeo implements DaoNeo4j<Aluno> {
 
-	@SuppressWarnings("static-access")
+	private Session session = null;
+
+	public AlunoDaoNeo() {
+		@SuppressWarnings("resource")
+		Neo4jConnection connection = new Neo4jConnection();
+		this.session = connection.getSession();
+	}
+
 	public void salvar(Aluno aluno) {
-		try (Session session = (Session) connection.getInstance()) {
-			try (Transaction tx = session.beginTransaction()) {
-				tx.run("CREATE (a:Aluno {nomePessoa: '" + aluno.getNome() + "', idPessoa: '" + aluno.getIdPessoa()
-						+ "', email: '" + aluno.getEmail() + ", matricula: '" + aluno.getMatricula() + "'})");
-				pessoa = null;
-				pessoa.salvar(aluno);
-				tx.success();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		} finally {
-			try {
-				connection.close();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		try (Transaction tx = session.beginTransaction()) {
+			tx.run("CREATE (a:Aluno {nomePessoa: '" + aluno.getNome() + "', idPessoa: " + aluno.getIdPessoa()
+					+ ", email: '" + aluno.getEmail() + "', matricula: " + aluno.getMatricula() + "})");
+			tx.success();
+			session.close();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
 	public void atualizar(Aluno oldAluno, Aluno alunoNovo) {
-		try (@SuppressWarnings("static-access")
-		Session session = (Session) connection.getInstance()) {
-			try (Transaction tx = session.beginTransaction()) {
-				tx.run("MATCH (a:Aluno {nomePessoa: '" + oldAluno.getNome() + "'}) SET a.nomePessoa = '"
-						+ alunoNovo.getNome() + "'");
-				try {
-					pessoa.atualizar(oldAluno, alunoNovo);
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				tx.success();
-			}
-		} finally {
-			try {
-				connection.close();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		try (Transaction tx = session.beginTransaction()) {
+			tx.run("MATCH (a:Aluno {nomePessoa: '" + oldAluno.getNome() + "'}) SET a.nomePessoa = '"
+					+ alunoNovo.getNome() + "'");
+			tx.success();
+			session.close();
 		}
 	}
 
 	public void deletar(Aluno aluno) {
-		try (@SuppressWarnings("static-access")
-		Session session = (Session) connection.getInstance()) {
-			try (Transaction tx = session.beginTransaction()) {
-				tx.run("MATCH (a:Aluno {nomePessoa: '" + aluno.getNome() + "'}) DETACH DELETE a");
-				try {
-					pessoa.deletar(aluno);
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				tx.success();
-			}
-		} finally {
-			try {
-				connection.close();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		try (Transaction tx = session.beginTransaction()) {
+			tx.run("MATCH (a:Aluno {nomePessoa: '" + aluno.getNome() + "'}) DETACH DELETE a");
+			tx.success();
+			session.close();
 		}
 	}
 
 	public DBObject findOne(Aluno aluno) {
-		@SuppressWarnings("static-access")
-		Session session = (Session) connection.getInstance();
 		StatementResult resultado = session
 				.run("MATCH (n:Aluno) WHERE n.nomePessoa = '" + aluno.getNome() + "'RETURN n");
 		while (resultado.hasNext()) {
@@ -105,8 +67,6 @@ public class AlunoDaoNeo implements DaoNeo4j<Aluno>{
 
 	public List<Aluno> buscarTodos() {
 		ArrayList<Aluno> allAluno = new ArrayList<Aluno>();
-		@SuppressWarnings("static-access")
-		Session session = (Session) connection.getInstance();
 		StatementResult resultado = session.run("MATCH (n:Aluno) RETURN n");
 		while (resultado.hasNext()) {
 			Record nodeAtual = resultado.next();

@@ -15,64 +15,42 @@ import br.ifpb.ads.bd2.persistenciaNeo4J.Neo4jConnection;
 
 public class EnderecoDaoNeo implements DaoNeo4j<Endereco> {
 
-	Neo4jConnection connection;
+	private Session session = null;
 
-	@SuppressWarnings("static-access")
+	public EnderecoDaoNeo() {
+		@SuppressWarnings("resource")
+		Neo4jConnection connection = new Neo4jConnection();
+		this.session = connection.getSession();
+	}
+
 	public void salvar(Endereco end) {
-		try (Session session = (Session) connection.getInstance()) {
-			try (Transaction tx = session.beginTransaction()) {
-				tx.run("CREATE (a:Endereco {rua: '" + end.getRua() + "', cidade: '" + end.getCidade() + "', estado: '"
-						+ end.getEstado() + "'})");
-				tx.success();
-			}
-		} finally {
-			try {
-				connection.close();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		try (Transaction tx = session.beginTransaction()) {
+			tx.run("CREATE (a:Endereco {rua: '" + end.getRua() + "', cidade: '" + end.getCidade() + "', estado: '"
+					+ end.getEstado() + "'})");
+			tx.success();
+			session.close();
 		}
 	}
 
 	public void atualizar(Endereco oldEndereco, Endereco enderecoNovo) {
-		try (@SuppressWarnings("static-access")
-		Session session = (Session) connection.getInstance()) {
-			try (Transaction tx = session.beginTransaction()) {
-				tx.run("MATCH (a:Endereco {cidade: '" + oldEndereco.getCidade() + "'}) SET a.cidade = '"
-						+ enderecoNovo.getCidade() + "'");
-				tx.success();
-			}
-		} finally {
-			try {
-				connection.close();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+
+		try (Transaction tx = session.beginTransaction()) {
+			tx.run("MATCH (a:Endereco {cidade: '" + oldEndereco.getCidade() + "'}) SET a.cidade = '"
+					+ enderecoNovo.getCidade() + "'");
+			tx.success();
+			session.close();
 		}
 	}
 
 	public void deletar(Endereco end) {
-		try (@SuppressWarnings("static-access")
-		Session session = (Session) connection.getInstance()) {
-			try (Transaction tx = session.beginTransaction()) {
-				tx.run("MATCH (a:Endereco {rua: '" + end.getRua() + "'}) DETACH DELETE a");
-				tx.success();
-			}
-		} finally {
-			try {
-				connection.close();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		try (Transaction tx = session.beginTransaction()) {
+			tx.run("MATCH (a:Endereco {rua: '" + end.getRua() + "'}) DETACH DELETE a");
+			tx.success();
+			session.close();
 		}
 	}
 
 	public DBObject findOne(Endereco end) {
-		@SuppressWarnings("static-access")
-		Session session = (Session) connection.getInstance();
 		StatementResult resultado = session.run("MATCH (n:Endereco) WHERE n.rua = '" + end.getRua() + "'RETURN n");
 		while (resultado.hasNext()) {
 			Record nodeAtual = resultado.next();
@@ -86,8 +64,6 @@ public class EnderecoDaoNeo implements DaoNeo4j<Endereco> {
 
 	public List<Endereco> buscarTodos() {
 		ArrayList<Endereco> allEndereco = new ArrayList<Endereco>();
-		@SuppressWarnings("static-access")
-		Session session = (Session) connection.getInstance();
 		StatementResult resultado = session.run("MATCH (n:Endereco) RETURN n");
 		while (resultado.hasNext()) {
 			Record nodeAtual = resultado.next();
